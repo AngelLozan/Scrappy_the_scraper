@@ -1,6 +1,6 @@
 # Scrape snap store for malicious packages
 
-A function to be run as a lambda in aws that will alert brand protection agents of malicious packages on the snap store, which are impersonating our brand.
+A precursor function to be modified and run as a lambda in aws that will alert brand protection agents of malicious packages on the snap store, which are impersonating our brand. 
 
 Beta
 
@@ -13,3 +13,5 @@ Build the Go script and zip for AWS Lambda.
 ```
 
 Needs `.env` vars initialized in AWS. 
+
+Set hanlder to `main`
