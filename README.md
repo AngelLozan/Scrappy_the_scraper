@@ -2,7 +2,7 @@
 
 A precursor function to be modified and run as a lambda in aws that will alert brand protection agents of malicious packages on the snap store, which are impersonating our brand. 
 
-Beta
+Beta (currently running cron job on my computer)
 
 ### Setup
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/gocolly/colly/v2"
 	"github.com/joho/godotenv"
+	"github.com/aws/aws-lambda-go/lambda"
 )
 
 type Malware struct {
@@ -51,14 +52,14 @@ func sendEmail(items []Malware) {
 
 	if error != nil {
 
-		log.Fatal(err)
+		log.Fatal(error)
 	}
 
 	fmt.Println("Successful, the mail was sent!")
 
 }
 
-func main() {
+func scrape(){
 	c := colly.NewCollector()
 
 	url := "https://snapcraft.io/search?q=exodus"
@@ -112,4 +113,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func main() {
+	lambda.Start(scrape)
 }
