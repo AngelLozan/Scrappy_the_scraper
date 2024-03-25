@@ -8,9 +8,13 @@ Beta (currently running cron job on my computer)
 
 Build the Go script and zip for AWS Lambda.
 ```
-> GOOS=linux GOARCH=amd64 go build -o main main.go
-> zip main.zip main
+<!-- > GOOS=linux GOARCH=amd64 go build -o main main.go -->
+GOARCH=arm64 GOOS=linux go build -o bootstrap lambda.go
+<!-- > zip main.zip main -->
+zip boostrap.zip boostrap
 ```
+
+For boostrap test, set upload as zip and enter test event to follow struct of `scrapeData` Test should succeed. 
 
 Needs `.env` vars initialized in AWS. 
 

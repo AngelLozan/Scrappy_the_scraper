@@ -9,7 +9,7 @@ import (
 
 	"github.com/gocolly/colly/v2"
 	"github.com/joho/godotenv"
-	"github.com/aws/aws-lambda-go/lambda"
+	// "github.com/aws/aws-lambda-go/lambda"
 )
 
 type Malware struct {
@@ -115,6 +115,16 @@ func scrape(){
 	}
 }
 
+// type scrapeData struct {
+// 	Urls  string "json:urls"
+// 	Words string "json:words"
+// }
+
+// func handler(event scrapeData){
+// 	scrape()
+// }
+
 func main() {
-	lambda.Start(scrape)
+	// lambda.Start(handler)
+	scrape()
 }
