@@ -7,3 +7,5 @@ main.zip
 boostrap
 lambda.go
 .vscode
+.DS_store
+
