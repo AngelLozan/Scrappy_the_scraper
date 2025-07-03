@@ -4,7 +4,17 @@ A precursor function to be modified and run as a lambda in aws that will alert b
 
 Beta (currently running cron job on my computer)
 
+cronmain runs a scrape of the snap store
+crongeneral runs a scrape of bing for general malicious sites
+
+Ideas: auto-submit to hitlist. Consolidate packages and main.
+
 ### Setup
+
+Build for local scraping:
+
+- go build -o general general.go
+
 
 Build the Go script and zip for AWS Lambda.
 ```

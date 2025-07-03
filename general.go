@@ -1,16 +1,17 @@
 package main
 
 import (
+	"encoding/base64"
 	"fmt"
 	"log"
 	"net/smtp"
+	"net/url"
 	"os"
 	"strings"
 
+	"github.com/AngelLozan/scraper/types"
 	"github.com/gocolly/colly/v2"
 	"github.com/joho/godotenv"
-	"github.com/AngelLozan/scraper/types"
-	// "github.com/aws/aws-lambda-go/lambda"
 )
 
 func sendPotentialMaliciousEmail(items []types.Malware) {
@@ -25,24 +26,20 @@ func sendPotentialMaliciousEmail(items []types.Malware) {
 	hostAddress := "smtp.gmail.com"
 
 	authenticate := smtp.PlainAuth("", yourMail, emailAppPassword, hostAddress)
-	// tlsConfigurations := &tls.Config{
-	// 	InsecureSkipVerify: true,
-	// 	ServerName:         hostAddress,
-	// }
 
 	var body string
-	for _, item := range items{
+	for _, item := range items {
 		body += fmt.Sprintf("%v: %v\n\n", item.Title, item.Link)
 	}
 	to := []string{recipient}
 
 	msg := []byte(fmt.Sprintf("To: %v\r\n"+
 
-		"Subject: Malicious packages found on Snap\r\n"+
+		"Subject: Potentially Malicious Urls\r\n"+
 
 		"\r\n"+
 
-		"Please review the following packages: \n%v\r\n", recipient, body))
+		"Please review the following sites: \n%v\r\n", recipient, body))
 
 	error := smtp.SendMail("smtp.gmail.com:587", authenticate, yourMail, to, msg)
 
@@ -55,12 +52,11 @@ func sendPotentialMaliciousEmail(items []types.Malware) {
 
 }
 
-func scrapeGeneral(){
+func scrapeGeneral() {
 	c := colly.NewCollector()
+	var items []types.Malware
 
-	url := "https://snapcraft.io/search?q=exodus"
-
-	element := ".p-media-object"
+	element := "a.tilk"
 
 	c.OnRequest(func(r *colly.Request) {
 		fmt.Println("Visiting", r.URL)
@@ -74,53 +70,88 @@ func scrapeGeneral(){
 		fmt.Println("An error occurred!:", e)
 	})
 
-	var items []types.Malware
-
 	c.OnHTML(element, func(e *colly.HTMLElement) {
 
 		maliciousItem := types.Malware{}
 
-		link := e.Attr("href")
-		title := e.Attr("title")
+		link := extractBingLink(e.Attr("href"))
+
+		title := e.Attr("aria-label")
 
 		cleanLink := strings.TrimSpace(link)
 		cleanTitle := strings.TrimSpace(title)
 
-		maliciousItem.Link = fmt.Sprintf("https://snapcraft.io%s", cleanLink)
+		maliciousItem.Link = cleanLink
 		maliciousItem.Title = cleanTitle
 
-		if strings.Contains(strings.ToLower(maliciousItem.Title), "wallet") {
+		excludedWords := []string{"www.exodus.com", "reddit"}
+		shouldAppend := true
+		for _, word := range excludedWords {
+			if strings.Contains(strings.ToLower(cleanLink), word) {
+				shouldAppend = false
+				break
+			}
+		}
+
+		if shouldAppend {
 			items = append(items, maliciousItem)
 		}
 
 	})
 
 	c.OnScraped(func(r *colly.Response) {
-		if len(items) > 0 {
-			fmt.Println("Found some malicious items:", items)
-			sendPotentialMaliciousEmail(items)
-		} else {
-			fmt.Println("Nothing found today")
-		}
+		fmt.Println("Scraping finished for", r.Request.URL)
 	})
 
-	err := c.Visit(url)
+	pages := []int{1, 11, 21, 31, 41, 51, 61, 71, 81, 91}
 
-	if err != nil {
-		log.Fatal(err)
+	for _, start := range pages {
+		searchURL := fmt.Sprintf("https://www.bing.com/search?q=exodus+wallet&first=%d", start)
+		err := c.Visit(searchURL)
+		if err != nil {
+			log.Println("Visit failed for", searchURL, ":", err)
+
+		}
 	}
+
+	c.Wait()
+
+	if len(items) > 0 {
+		fmt.Println("Found some potentially malicious items:", items)
+		sendPotentialMaliciousEmail(items)
+	} else {
+		fmt.Println("Nothing found today")
+	}
+
 }
 
-// type scrapeData struct {
-// 	Urls  string "json:urls"
-// 	Words string "json:words"
-// }
+func extractBingLink(rawHref string) string {
+	u, err := url.Parse(rawHref)
+	if err != nil {
+		log.Println("Invalid href:", err)
+		return rawHref
+	}
 
-// func handler(event scrapeData){
-// 	scrape()
-// }
+	encoded := u.Query().Get("u")
+	if encoded == "" {
+		return rawHref
+	}
 
-func generalScrape() {
-	// lambda.Start(handler)
+	cleanEncoded := encoded
+	if strings.HasPrefix(encoded, "a1") {
+		cleanEncoded = encoded[2:]
+	}
+
+	decodedBytes, err := base64.RawURLEncoding.DecodeString(cleanEncoded)
+	if err != nil {
+		log.Println("Base64 decode failed:", err)
+		return rawHref
+	}
+
+	return string(decodedBytes)
+}
+
+func main() {
 	scrapeGeneral()
+	fmt.Println("Scraping completed.")
 }
