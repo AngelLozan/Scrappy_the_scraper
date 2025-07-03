@@ -4,27 +4,24 @@ import (
 	"fmt"
 	"log"
 	"net/smtp"
-	// "os"
+	"os"
 	"strings"
 
 	"github.com/gocolly/colly/v2"
 	"github.com/joho/godotenv"
-	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/AngelLozan/scraper/types"
+	// "github.com/aws/aws-lambda-go/lambda"
 )
 
-func sendLambdaEmail(items []types.Malware) {
+func sendPotentialMaliciousEmail(items []types.Malware) {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
-	// emailAppPassword := os.Getenv("APP_PASS")
-	// yourMail := os.Getenv("SENDER")
-	// recipient := os.Getenv("RECIPIENT")
-	emailAppPassword := "gkki jurz prqd jnii"
-	yourMail := "scott.lo@exodus.io"
-	recipient := "scott.lo@exodus.io"
+	emailAppPassword := os.Getenv("APP_PASS")
+	yourMail := os.Getenv("SENDER")
+	recipient := os.Getenv("RECIPIENT")
 	hostAddress := "smtp.gmail.com"
 
 	authenticate := smtp.PlainAuth("", yourMail, emailAppPassword, hostAddress)
@@ -58,7 +55,7 @@ func sendLambdaEmail(items []types.Malware) {
 
 }
 
-func scrapeLambda(){
+func scrapeGeneral(){
 	c := colly.NewCollector()
 
 	url := "https://snapcraft.io/search?q=exodus"
@@ -98,10 +95,10 @@ func scrapeLambda(){
 
 	})
 
-		c.OnScraped(func(r *colly.Response) {
+	c.OnScraped(func(r *colly.Response) {
 		if len(items) > 0 {
 			fmt.Println("Found some malicious items:", items)
-			sendLambdaEmail(items)
+			sendPotentialMaliciousEmail(items)
 		} else {
 			fmt.Println("Nothing found today")
 		}
@@ -114,20 +111,16 @@ func scrapeLambda(){
 	}
 }
 
-type scrapeData struct {
-	Name string `json:"name"`
-}
+// type scrapeData struct {
+// 	Urls  string "json:urls"
+// 	Words string "json:words"
+// }
 
+// func handler(event scrapeData){
+// 	scrape()
+// }
 
-func HandleRequest(event *scrapeData) (*string, error) {
-	if event == nil {
-		return nil, fmt.Errorf("received nil event")
-	}
-	message := fmt.Sprintf("Hello %s!", event.Name)
-	go scrape()
-	return &message, nil
-}
-
-func mainLambda() {
-	lambda.Start(HandleRequest)
+func generalScrape() {
+	// lambda.Start(handler)
+	scrapeGeneral()
 }

@@ -9,15 +9,12 @@ import (
 
 	"github.com/gocolly/colly/v2"
 	"github.com/joho/godotenv"
+	"github.com/AngelLozan/scraper/types"
 	// "github.com/aws/aws-lambda-go/lambda"
 )
 
-type Malware struct {
-	link  string
-	title string
-}
 
-func sendEmail(items []Malware) {
+func sendEmail(items []types.Malware) {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -36,7 +33,7 @@ func sendEmail(items []Malware) {
 
 	var body string
 	for _, item := range items{
-		body += fmt.Sprintf("%v: %v\n\n", item.title, item.link)
+		body += fmt.Sprintf("%v: %v\n\n", item.Title, item.Link)
 	}
 	to := []string{recipient}
 
@@ -78,11 +75,11 @@ func scrape(){
 		fmt.Println("An error occurred!:", e)
 	})
 
-	var items []Malware
+	var items []types.Malware
 
 	c.OnHTML(element, func(e *colly.HTMLElement) {
 
-		maliciousItem := Malware{}
+		maliciousItem := types.Malware{}
 
 		link := e.Attr("href")
 		title := e.Attr("title")
@@ -90,10 +87,10 @@ func scrape(){
 		cleanLink := strings.TrimSpace(link)
 		cleanTitle := strings.TrimSpace(title)
 
-		maliciousItem.link = fmt.Sprintf("https://snapcraft.io%s", cleanLink)
-		maliciousItem.title = cleanTitle
+		maliciousItem.Link = fmt.Sprintf("https://snapcraft.io%s", cleanLink)
+		maliciousItem.Title = cleanTitle
 
-		if strings.Contains(strings.ToLower(maliciousItem.title), "wallet") {
+		if strings.Contains(strings.ToLower(maliciousItem.Title), "wallet") {
 			items = append(items, maliciousItem)
 		}
 
