@@ -11,3 +11,4 @@ lambda.go
 /build.go
 /crongeneral
 /cronmain
+*bootstrap
