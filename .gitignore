@@ -8,4 +8,6 @@ boostrap
 lambda.go
 .vscode
 .DS_store
-
+/build.go
+/crongeneral
+/cronmain
