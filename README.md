@@ -32,3 +32,9 @@ zip boostrap.zip boostrap
 For boostrap test, set upload as zip and enter test event to follow struct of `scrapeData` Test should succeed. 
 Needs `.env` vars initialized in AWS. 
 Set hanlder to `main`
+
+#### Testing
+
+```go
+go test ./...
+```

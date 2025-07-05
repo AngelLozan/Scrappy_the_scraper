@@ -12,33 +12,11 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+	"github.com/AngelLozan/scraper/types"
 )
 
-type Alert struct {
-	ID        int    `json:"id"`
-	Url       string `json:"offending_content_url"`
-	Timestamp string `json:"content_created_at"`
-	Status    string `json:"status"`
-	Severity  int    `json:"severity"`
-}
-
-type Alerts struct {
-	Alerts []Alert `json:"alerts"`
-}
-
-type zfAlert struct {
-	ID          int       `json:"id"`
-	Url         string    `json:"url"`
-	RemovedDate *time.Time `json:"removed_date"`
-	Status      string    `json:"status"`
-}
-
-type zfAlerts struct {
-	ZFAlerts []zfAlert `json:"alerts"`
-}
-
 // Fetch and format alerts urls
-func fetchAlerts() []Alert {
+func fetchAlerts() []types.Alert {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -55,7 +33,7 @@ func fetchAlerts() []Alert {
 	fmt.Println("Request URL:", req.URL.String())
 	if err != nil {
 		log.Printf("Failed to create request: %s", err)
-		return []Alert{}
+		return []types.Alert{}
 	}
 	req.Header.Add("Authorization", zfToken)
 	client := &http.Client{}
@@ -64,7 +42,7 @@ func fetchAlerts() []Alert {
 
 	if err != nil {
 		log.Printf("Request Failed: %s", err)
-		return []Alert{}
+		return []types.Alert{}
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
@@ -72,11 +50,11 @@ func fetchAlerts() []Alert {
 	bodyString := string(body)
 	log.Print(bodyString)
 	// Unmarshal result
-	alerts := Alerts{}
+	alerts := types.Alerts{}
 	err = json.Unmarshal(body, &alerts)
 	if err != nil {
 		log.Printf("Reading body failed: %s", err)
-		return []Alert{}
+		return []types.Alert{}
 	}
 
 	log.Printf("Length of alerts: %d", len(alerts.Alerts))
@@ -95,7 +73,7 @@ func fetchAlerts() []Alert {
 		return onlyAlerts
 	} else {
 		fmt.Println("No alerts found")
-		return []Alert{}
+		return []types.Alert{}
 	}
 }
 
@@ -115,7 +93,7 @@ func cleanUrl(rawUrl string) string {
 
 
 // For each alert url, check on hitlist if it is resolved status
-func reconcileHitlist(alerts []Alert) {
+func reconcileHitlist(alerts []types.Alert) {
 	for _, alert := range alerts {
 		fmt.Println("Checking hitlist for alert:", alert.Url)
 		if searchHitlist(alert.Url) {
@@ -129,7 +107,7 @@ func reconcileHitlist(alerts []Alert) {
 }
 
 // If resolved, cancel takedown and close alert in zerofox
-func cancelTakedown(alert Alert) {
+func cancelTakedown(alert types.Alert) {
 	fmt.Println("Cancelling takedown for alert:", alert.Url)
 	
 	zfToken := os.Getenv("ZF_TOKEN")
@@ -165,7 +143,7 @@ func cancelTakedown(alert Alert) {
 	fmt.Println("Alert closed:", alert.Url)
 }
 
-func closeAlert(alert Alert) {
+func closeAlert(alert types.Alert) {
 	fmt.Println("Closing alert:", alert.Url)
 	
 	zfToken := os.Getenv("ZF_TOKEN")
@@ -199,8 +177,6 @@ func closeAlert(alert Alert) {
 	fmt.Println("Alert closed:", alert.Url)
 }
 
-
-
 func searchHitlist(_url string) bool {
 	fmt.Println("Searching hitlist for URL:", _url)
 	params := url.Values{}
@@ -216,15 +192,15 @@ func searchHitlist(_url string) bool {
   bodyString := string(body)
   log.Print(bodyString)
 
-  zf_alerts := zfAlerts{}
+  zf_alerts := types.HitlistAlerts{}
   err = json.Unmarshal(body, &zf_alerts)
   if err != nil {
      log.Printf("Reading body failed: %s", err)
      return false
   }
   
-  if len(zf_alerts.ZFAlerts) > 0 && zf_alerts.ZFAlerts[0].Status == "resolved" {
-	fmt.Println("Found", len(zf_alerts.ZFAlerts), "alert is resolved in hitlist")
+  if len(zf_alerts.HitlistAlerts) > 0 && zf_alerts.HitlistAlerts[0].Status == "resolved" {
+	fmt.Println("Found", len(zf_alerts.HitlistAlerts), "alert is resolved in hitlist")
 	return true
   } else {
 	fmt.Println("No alerts found in hitlist")
