@@ -26,6 +26,17 @@ type Alerts struct {
 	Alerts []Alert `json:"alerts"`
 }
 
+type zfAlert struct {
+	ID          int       `json:"id"`
+	Url         string    `json:"url"`
+	RemovedDate *time.Time `json:"removed_date"`
+	Status      string    `json:"status"`
+}
+
+type zfAlerts struct {
+	ZFAlerts []zfAlert `json:"alerts"`
+}
+
 // Fetch and format alerts urls
 func fetchAlerts() []Alert {
 	err := godotenv.Load()
@@ -57,7 +68,7 @@ func fetchAlerts() []Alert {
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
-	// Log the request body
+
 	bodyString := string(body)
 	log.Print(bodyString)
 	// Unmarshal result
@@ -102,10 +113,126 @@ func cleanUrl(rawUrl string) string {
 	return host
 }
 
-// TO DO:
+
 // For each alert url, check on hitlist if it is resolved status
-// if resolved, cancel takedown and close alert in zerofox
+func reconcileHitlist(alerts []Alert) {
+	for _, alert := range alerts {
+		fmt.Println("Checking hitlist for alert:", alert.Url)
+		if searchHitlist(alert.Url) {
+			fmt.Println("Alert found in hitlist, cancelling takedown and closing alert")
+			cancelTakedown(alert)
+		} else {
+			fmt.Println("Alert not found in hitlist, no action taken")
+			continue
+		}
+	}
+}
+
+// If resolved, cancel takedown and close alert in zerofox
+func cancelTakedown(alert Alert) {
+	fmt.Println("Cancelling takedown for alert:", alert.Url)
+	
+	zfToken := os.Getenv("ZF_TOKEN")
+	requestUrl := fmt.Sprintf("https://api.zerofox.com/1.0/alerts/%d/cancel_takedown", alert.ID)
+	req, err := http.NewRequest("POST", requestUrl, nil)
+	fmt.Println("Request URL:", req.URL.String())
+	if err != nil {
+		log.Printf("Failed to create request: %s", err)
+		return 
+	}
+	req.Header.Add("Authorization", zfToken)
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+
+	if err != nil {
+		log.Printf("Request Failed: %s", err)
+		return 
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+
+	bodyString := string(body)
+	log.Print(bodyString)
+
+	if err != nil {
+		log.Printf("Reading body failed: %s", err)
+		return 
+	}
+
+	fmt.Println("Takedown cancelled for alert:", alert.Url)
+	closeAlert(alert)
+	fmt.Println("Alert closed:", alert.Url)
+}
+
+func closeAlert(alert Alert) {
+	fmt.Println("Closing alert:", alert.Url)
+	
+	zfToken := os.Getenv("ZF_TOKEN")
+	requestUrl := fmt.Sprintf("https://api.zerofox.com/1.0/alerts/%d/close", alert.ID)
+	req, err := http.NewRequest("POST", requestUrl, nil)
+	fmt.Println("Request URL:", req.URL.String())
+	if err != nil {
+		log.Printf("Failed to create request: %s", err)
+		return 
+	}
+	req.Header.Add("Authorization", zfToken)
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+
+	if err != nil {
+		log.Printf("Request Failed: %s", err)
+		return 
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+
+	bodyString := string(body)
+	log.Print(bodyString)
+
+	if err != nil {
+		log.Printf("Reading body failed: %s", err)
+		return 
+	}
+
+	fmt.Println("Alert closed:", alert.Url)
+}
+
+
+
+func searchHitlist(_url string) bool {
+	fmt.Println("Searching hitlist for URL:", _url)
+	params := url.Values{}
+  	params.Add("q", _url)
+  	resp, err := http.Get("https://scam-hitlist-p.ot.exodus.com/api/iocs/search/?" +params.Encode())
+  if err != nil {
+     log.Printf("Request Failed: %s", err)
+     return false
+  }
+  defer resp.Body.Close()
+  body, err := ioutil.ReadAll(resp.Body)
+
+  bodyString := string(body)
+  log.Print(bodyString)
+
+  zf_alerts := zfAlerts{}
+  err = json.Unmarshal(body, &zf_alerts)
+  if err != nil {
+     log.Printf("Reading body failed: %s", err)
+     return false
+  }
+  
+  if len(zf_alerts.ZFAlerts) > 0 && zf_alerts.ZFAlerts[0].Status == "resolved" {
+	fmt.Println("Found", len(zf_alerts.ZFAlerts), "alert is resolved in hitlist")
+	return true
+  } else {
+	fmt.Println("No alerts found in hitlist")
+	return false
+  }
+}
 
 func main() {
-	fetchAlerts()
+	alerts := fetchAlerts()
+	reconcileHitlist(alerts)
 }
