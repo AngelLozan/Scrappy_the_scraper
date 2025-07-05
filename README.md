@@ -5,20 +5,19 @@
 Scripts to run as cron jobs or as one off executions.
 
 ### Current contents:
-- General script to scrape first 100 bing search results for `exodus wallet` keywords and return anything that's not reddit or related to www.exodus.com. Set to run on cron job if compiled (insert env vars before compilation) and running locally on cron job. Alerts via email. 
+- General script to scrape first 100 bing search results for `exodus wallet` keywords and return anything that's not reddit or related to exodus [dot] com. Set to run on cron job if compiled (insert env vars before compilation) and running locally on cron job. Alerts via email. 
 - Script prototype to run similar cron job on aws lambda
 - Script to scrape Snap store for any malicious packages related to Exodus. Alerts via email. currently running locally on cron job. Insert env vars before compilation.
 - Script to reconcile removed IoCs on our internal application ScamHitlist and cancel/close the corresponding alerts on ZeroFox platform where brand protection is housed. One time run needed.
 
-### Setup
+#### Setup
 
 Build for local scraping:
 ```go
 go build -o general general.go
 ```
 
-
-Build the Go script and zip for AWS Lambda.
+#### Build the Go script and zip for AWS Lambda. (WIP)
 
 ```zsh
 <!-- > GOOS=linux GOARCH=amd64 go build -o main main.go -->
