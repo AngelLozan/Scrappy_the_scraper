@@ -1,6 +1,7 @@
 # Scrape snap store for malicious packages
 
-![Gopher mascot](gopher.png)
+<img src="gopher.png" alt="Gopher mascot" width="80" />
+
 
 Scripts to run as cron jobs or as one off executions.
 
