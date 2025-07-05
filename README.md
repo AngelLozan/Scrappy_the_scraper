@@ -1,4 +1,4 @@
-# Scrape snap store for malicious packages
+# Scraping & Scripts for the Scrappy Scooter
 
 <p align="center">
     <img src="gopher.png" alt="Gopher mascot" width="120" />
