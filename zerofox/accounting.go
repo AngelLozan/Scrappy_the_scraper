@@ -46,6 +46,10 @@ func fetchAlerts() []types.Alert {
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Reading body failed: %s", err)
+		return []types.Alert{}
+	}
 
 	bodyString := string(body)
 	log.Print(bodyString)
@@ -128,6 +132,10 @@ func cancelTakedown(alert types.Alert) {
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Reading body failed: %s", err)
+		return
+	}
 
 	bodyString := string(body)
 	log.Print(bodyString)
@@ -171,6 +179,10 @@ func closeAlert(alert types.Alert) (bool, error) {
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Reading body failed: %s", err)
+		return false, err
+	}
 
 	bodyString := string(body)
 	log.Print(bodyString)
@@ -184,7 +196,7 @@ func closeAlert(alert types.Alert) (bool, error) {
 		fmt.Println("\n\n ✅ Alert closed successfully:", alert.Url)
 		return true, nil
 	}
-	
+
 	return false, fmt.Errorf("failed to close alert: %s", alert.Url)
 }
 
@@ -199,6 +211,10 @@ func searchHitlist(_url string) bool {
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("Reading body failed: %s", err)
+		return false
+	}
 
 	bodyString := string(body)
 	log.Print(bodyString)
