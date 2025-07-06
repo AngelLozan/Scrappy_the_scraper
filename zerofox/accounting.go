@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -45,7 +45,7 @@ func fetchAlerts() []types.Alert {
 		return []types.Alert{}
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 
 	bodyString := string(body)
 	log.Print(bodyString)
@@ -127,7 +127,7 @@ func cancelTakedown(alert types.Alert) {
 		return
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 
 	bodyString := string(body)
 	log.Print(bodyString)
@@ -170,7 +170,7 @@ func closeAlert(alert types.Alert) (bool, error) {
 		return false, err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 
 	bodyString := string(body)
 	log.Print(bodyString)
@@ -198,7 +198,7 @@ func searchHitlist(_url string) bool {
 		return false
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 
 	bodyString := string(body)
 	log.Print(bodyString)
