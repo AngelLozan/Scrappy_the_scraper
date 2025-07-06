@@ -140,11 +140,6 @@ func cancelTakedown(alert types.Alert) {
 	bodyString := string(body)
 	log.Print(bodyString)
 
-	if err != nil {
-		log.Printf("Reading body failed: %s", err)
-		return
-	}
-
 	fmt.Println("/n/n ✅ Takedown cancelled for alert:", alert.Url)
 	closed, err := closeAlert(alert)
 	if err != nil {
@@ -186,11 +181,6 @@ func closeAlert(alert types.Alert) (bool, error) {
 
 	bodyString := string(body)
 	log.Print(bodyString)
-
-	if err != nil {
-		log.Printf("Reading body failed: %s", err)
-		return false, err
-	}
 
 	if resp.StatusCode == http.StatusOK {
 		fmt.Println("\n\n ✅ Alert closed successfully:", alert.Url)
