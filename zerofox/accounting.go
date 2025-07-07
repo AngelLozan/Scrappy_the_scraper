@@ -96,17 +96,21 @@ func cleanUrl(rawUrl string) string {
 }
 
 // For each alert url, check on hitlist if it is resolved status
-func reconcileHitlist(alerts []types.Alert) {
+func reconcileHitlist(alerts []types.Alert) int {
+	count := 0
 	for _, alert := range alerts {
 		fmt.Println("Checking hitlist for alert:", alert.Url)
 		if searchHitlist(alert.Url) {
 			fmt.Println("\n\n ✅ Alert found in hitlist, cancelling takedown and closing alert")
 			cancelTakedown(alert)
+			count++
 		} else {
 			fmt.Println("\n\n ❌ Alert not found in hitlist, no action taken")
 			continue
 		}
 	}
+	fmt.Println("\n\n 🏁 Reconciliation complete, total alerts processed:", count)
+	return count
 }
 
 // If resolved, cancel takedown and close alert in zerofox
