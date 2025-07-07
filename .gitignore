@@ -12,4 +12,5 @@ lambda.go
 /cronmain
 /cronmain.zip
 /crongeneral
+cron_log
 *bootstrap
