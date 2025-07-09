@@ -38,3 +38,9 @@ Set hanlder to `main`
 ```go
 go test ./...
 ```
+
+#### Accounting script (reconcile ZF alerts and Hitlist records)
+
+This script is meant to be run periodically or once in order to ensure we maximize our quota for accepted takedowns with ZeroFox. It reconciles what we have already resolved and what is yet to be counted against the quota on ZeroFox by closing alerts on ZF that are already resolved. 
+
+To run the script, go to the hitlist and download the latest IOC data from the settings tab. Remove all columns except the IOC and the STATUS columns and save in the `zerofox` directory as `data.csv`. Then you can run the script from `root` directory. 

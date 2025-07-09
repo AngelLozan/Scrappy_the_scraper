@@ -68,39 +68,3 @@ func TestCloseAlert(t *testing.T) {
 	}
 }
 
-func searchHitlistTest(_url, base string) (types.HitlistAlert, bool) {
-	resp, err := http.Get(base + "?q=" + _url)
-	if err != nil {
-		return types.HitlistAlert{}, false
-	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-
-	var alerts []types.HitlistAlert
-	err = json.Unmarshal(body, &alerts)
-	if err != nil || len(alerts) == 0 {
-		return types.HitlistAlert{}, false
-	}
-	return alerts[0], alerts[0].Status == "resolved"
-}
-
-func TestSearchHitlist_Unmarshal(t *testing.T) {
-	// Mock JSON response
-	mockData := `[{"id":16299,"url":"https://lyumlabs-v2connect.pages.dev/Connect","status":"resolved","tags":["wallet_connection "]}]`
-
-	// Create a test server
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(mockData))
-	}))
-	defer ts.Close()
-
-	urlToCheck := "https://lyumlabs-v2connect.pages.dev/Connect"
-	alert, ok := searchHitlistTest(urlToCheck, ts.URL)
-
-	if !ok {
-		t.Fatalf("Expected status 'resolved', got failure")
-	}
-	if alert.Url != urlToCheck {
-		t.Errorf("Expected URL %s, got %s", urlToCheck, alert.Url)
-	}
-}

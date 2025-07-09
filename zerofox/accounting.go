@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -100,7 +101,7 @@ func reconcileHitlist(alerts []types.Alert) int {
 	count := 0
 	for _, alert := range alerts {
 		fmt.Println("Checking hitlist for alert:", alert.Url)
-		if searchHitlist(alert.Url) {
+		if searchHitlist("./zerofox/data.csv", alert.Url) {
 			fmt.Println("\n\n ✅ Alert found in hitlist, cancelling takedown and closing alert")
 			cancelTakedown(alert)
 			count++
@@ -194,39 +195,83 @@ func closeAlert(alert types.Alert) (bool, error) {
 	return false, fmt.Errorf("failed to close alert: %s", alert.Url)
 }
 
-func searchHitlist(_url string) bool {
-	fmt.Println("\n\n 🔎 Searching hitlist for URL:", _url)
-	params := url.Values{}
-	params.Add("q", _url)
-	resp, err := http.Get("https://scam-hitlist-p.ot.exodus.com/api/iocs/search/?" + params.Encode())
+type IOC struct {
+	URL      string
+	Resolved bool
+}
+
+func loadIOCsFromCSV(path string) ([]IOC, error) {
+	file, err := os.Open(path)
 	if err != nil {
-		log.Printf("Request Failed: %s", err)
-		return false
+		return nil, err
 	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
+	defer file.Close()
+
+	csvReader := csv.NewReader(file)
+	csvReader.TrimLeadingSpace = true
+	csvReader.FieldsPerRecord = -1 // allow variable columns
+
+	records, err := csvReader.ReadAll()
 	if err != nil {
-		log.Printf("Reading body failed: %s", err)
-		return false
+		return nil, err
 	}
 
-	bodyString := string(body)
-	log.Print(bodyString)
+	if len(records) < 1 {
+		return nil, fmt.Errorf("CSV is empty or missing headers")
+	}
 
-	zf_alerts := types.HitlistAlerts{}
-	err = json.Unmarshal(body, &zf_alerts)
+	header := records[0]
+	iocIndex := -1
+	statusIndex := -1
+
+	for i, h := range header {
+		switch strings.TrimSpace(h) {
+		case "IOC":
+			iocIndex = i
+		case "Status":
+			statusIndex = i
+		}
+	}
+
+	if iocIndex == -1 || statusIndex == -1 {
+		return nil, fmt.Errorf("required columns not found")
+	}
+
+	var iocs []IOC
+	for _, line := range records[1:] {
+		if len(line) <= statusIndex || len(line) <= iocIndex {
+			continue
+		}
+
+		status := strings.ToLower(strings.TrimSpace(line[statusIndex]))
+		url := strings.TrimSpace(line[iocIndex])
+		resolved := status == "resolved"
+
+		iocs = append(iocs, IOC{
+			URL:      url,
+			Resolved: resolved,
+		})
+	}
+
+	return iocs, nil
+}
+
+
+func searchHitlist(path string, _url string) bool {
+	iocs, err := loadIOCsFromCSV(path)
 	if err != nil {
-		log.Printf("Reading body failed: %s", err)
-		return false
+		log.Fatalf("Failed to load CSV: %v", err)
 	}
 
-	if len(zf_alerts.HitlistAlerts) > 0 && zf_alerts.HitlistAlerts[0].Status == "resolved" {
-		fmt.Println("\n\n 🟩 Found", len(zf_alerts.HitlistAlerts), "alert is resolved in hitlist")
-		return true
-	} else {
-		fmt.Println("/n/n ❌ No alerts found in hitlist")
-		return false
+	for _, ioc := range iocs {
+		fmt.Printf("Checking IOC: %s, Resolved: %t\n", ioc.URL, ioc.Resolved)
+		if ioc.Resolved && strings.Contains(ioc.URL, _url) {
+			log.Printf("✅ Found resolved alert for URL: %s", _url)
+			return true
+		}
 	}
+	log.Printf("❌ No resolved alert for URL: %s", _url)
+	return false
 }
 
 func main() {

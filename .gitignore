@@ -14,3 +14,4 @@ lambda.go
 /crongeneral
 cron_log
 *bootstrap
+/zerofox/data.csv
