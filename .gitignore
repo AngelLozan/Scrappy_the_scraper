@@ -12,6 +12,7 @@ lambda.go
 /cronmain
 /cronmain.zip
 /crongeneral
+/cronsnap
 cron_log
 *bootstrap
 /zerofox/data.csv

@@ -69,6 +69,7 @@ func scrape() {
 
 	c.OnResponse(func(r *colly.Response) {
 		fmt.Printf("Got a response from %v\n\n", r.Request.URL)
+		fmt.Println("Response status code:", r.StatusCode)
 	})
 
 	c.OnError(func(r *colly.Response, e error) {

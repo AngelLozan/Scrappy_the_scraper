@@ -31,3 +31,20 @@ type HitlistAlert struct {
 type HitlistAlerts struct {
 	HitlistAlerts []HitlistAlert 
 }
+
+type Snap struct {
+	Title       string `json:"title"`
+	Summary     string `json:"summary"`
+	Description string `json:"description"`
+	PackageName string `json:"package_name"`
+	Publisher   string `json:"publisher"`
+	Website     string `json:"website"`
+}
+
+type Embedded struct {
+	Packages []Snap `json:"clickindex:package"`
+}
+
+type SnapAPIResponse struct {
+	Embedded Embedded `json:"_embedded"`
+}
