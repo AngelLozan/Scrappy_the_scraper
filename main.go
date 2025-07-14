@@ -7,12 +7,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/AngelLozan/scraper/types"
 	"github.com/gocolly/colly/v2"
 	"github.com/joho/godotenv"
-	"github.com/AngelLozan/scraper/types"
 	// "github.com/aws/aws-lambda-go/lambda"
 )
-
 
 func sendEmail(items []types.Malware) {
 	err := godotenv.Load()
@@ -32,7 +31,7 @@ func sendEmail(items []types.Malware) {
 	// }
 
 	var body string
-	for _, item := range items{
+	for _, item := range items {
 		body += fmt.Sprintf("%v: %v\n\n", item.Title, item.Link)
 	}
 	to := []string{recipient}
@@ -56,12 +55,13 @@ func sendEmail(items []types.Malware) {
 
 }
 
-func scrape(){
+func scrape() {
 	c := colly.NewCollector()
 
 	url := "https://snapcraft.io/search?q=exodus"
 
 	element := ".p-media-object"
+	keywords := []string{"exodus", "crypto", "wallet"}
 
 	c.OnRequest(func(r *colly.Request) {
 		fmt.Println("Visiting", r.URL)
@@ -83,6 +83,16 @@ func scrape(){
 
 		link := e.Attr("href")
 		title := e.Attr("title")
+		fullText := strings.ToLower(e.Text)
+		fmt.Println("Full text:", fullText)
+
+		for _, keyword := range keywords {
+			if strings.Contains(fullText, keyword) {
+				fmt.Println("Text:", e.Text)
+				items = append(items, maliciousItem)
+				break
+			}
+		}
 
 		cleanLink := strings.TrimSpace(link)
 		cleanTitle := strings.TrimSpace(title)
