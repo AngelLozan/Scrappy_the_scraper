@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/http"
+	// "net/http"
 	"net/smtp"
 	"os"
 	"strings"
@@ -16,7 +16,10 @@ import (
 	"golang.org/x/text/runes"
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
+	"github.com/hashicorp/go-retryablehttp" 
+	"time"
 )
+
 
 func sendEmail(items []types.Malware) {
 	err := godotenv.Load()
@@ -115,20 +118,19 @@ func containsKeywordVariant(text, keyword string) bool {
 }
 
 func scrapeSnapAPI() {
+	retryClient := retryablehttp.NewClient()
+	retryClient.RetryWaitMin = 1 * time.Second
+	retryClient.RetryWaitMax = 30 * time.Second
+	retryClient.RetryMax = 3
+	
 	url := "https://api.snapcraft.io/api/v1/snaps/search?q=exodus"
 	var items []types.Malware
 	maliciousItem := types.Malware{}
 
-	req, _ := http.NewRequest("GET", url, nil)
-	req.Header.Set("Snap-Device-Series", "16")
-	req.Header.Set("User-Agent", "Mozilla/5.0")
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := retryClient.Get(url)
 	if err != nil {
 		log.Fatal("Request failed:", err)
 	}
-	defer resp.Body.Close()
-
 	body, _ := io.ReadAll(resp.Body)
 
 	log.Println("Response Status:", resp.Status)
